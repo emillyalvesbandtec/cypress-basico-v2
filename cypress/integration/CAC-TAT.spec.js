@@ -7,6 +7,8 @@
 
 
 describe('Central de Atendimento ao Cliente TAT', function() {
+    const THREE_SECONDS_IN_MS= 3000
+
     beforeEach(function(){
         cy.visit('./src/index.html')
     })
@@ -18,6 +20,9 @@ describe('Central de Atendimento ao Cliente TAT', function() {
 
     it('preenche os campos obrigatórios e envia o formulário', function(){
         const longText =  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+        cy.clock()
+
         cy.get('#firstName').type('Emilly')
         cy.get('#lastName').type('Santos')
         cy.get('#email').type('emillys259@gmail.com')
@@ -25,6 +30,11 @@ describe('Central de Atendimento ao Cliente TAT', function() {
         cy.contains('button','Enviar').click()
 
         cy.get('.success').should('be.visible')
+
+        cy.tick(THREE_SECONDS_IN_MS)
+
+        cy.get('.success').should('not.be.visible')
+
     })
 
     it('exibe mensagem de erro ao submeter o formulário com um email com formatação inválida', function(){
@@ -182,5 +192,67 @@ describe('Central de Atendimento ao Cliente TAT', function() {
             cy.contains('Talking About Testing').should('be.visible')
     })
 
+    it('exibe e esconde as mensagens de sucesso e erro usando o .invoke()', function(){
+
+            // Pegando elemento com a classe success
+            cy.get('.success')
+
+            // Verificado que não está vísivel
+              .should('not.be.visible')
+
+            // Vai exibir esse elemtno que esta escondido
+              .invoke('show')
+              .should('be.visible')
+              .and('contain', 'Mensagem enviada com sucesso.')
+
+            // Para esconder ele 
+              .invoke('hide')
+
+            // Verifica que não está mais vísivel 
+              .should('not.be.visible')
+            
+            
+              cy.get('.error')
+              .should('not.be.visible')
+              .invoke('show')
+              .should('be.visible')
+              .and('contain', 'Valide os campos obrigatórios!')
+              .invoke('hide')
+              .should('not.be.visible')
+    })
+
+    it('preenche a area de texto usando o comando invoke', function(){
+        const LongText= Cypress._.repeat('0123456789', 20)
+
+        cy.get('#open-text-area')
+        // Invoka o valor dessa area de texto e seta esse valor o texto longo 
+        .invoke('val', LongText)
+        .should('have.value', LongText)
+    })
+
+
+    it('faz uma requisição HTTP', function(){
+
+        // usando request para fazer requisições a nível de rede http
+        cy.request('https://cac-tat.s3.eu-central-1.amazonaws.com/index.html')   
+
+        // Usado para fazer verificação, em uma função de callbabk recebendo a resposta da requisição
+            .should(function(response){
+                const {status, statusText, body } = response
+                expect(status).to.equal(200)
+                expect(statusText).to.equal('OK')
+                expect(body).to.include('CAC TAT')
+            })
+
+    })
+
+    it.only('Encontra o gato escondido', function(){
+        cy.get('#cat')
+        .invoke('show')
+        .should('be.visible')
+        
+        cy.get('#title')
+            .invoke('text', 'CAT TAT')
+    })
 
   })
